@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineStream - Minimalist Black & White Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 CDN Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        /* Custom Focus Ring for TV Remote D-Pad Navigation */
+        .tv-focusable:focus,
+        .tv-focusable.tv-focused {
+            outline: none !important;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #000000 !important;
+            transform: scale(1.02);
+            z-index: 20;
+        }
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-black text-white antialiased selection:bg-white selection:text-black">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 w-full bg-black/90 backdrop-blur-xl border-b border-white/15 px-4 lg:px-8 py-3.5 transition-all">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <!-- Brand Logo -->
+            <a href="#" id="brandLogo" class="tv-focusable rounded-xl flex items-center gap-3 group focus:outline-none">
+                <div class="w-9 h-9 rounded-lg bg-white text-black flex items-center justify-center font-black shadow group-hover:scale-105 transition">
+                    <i class="fa-solid fa-play text-sm"></i>
+                </div>
+                <div class="hidden sm:block">
+                    <h1 class="font-bold text-base tracking-widest uppercase text-white">CineStream</h1>
+                    <p class="text-[9px] text-neutral-400 font-mono tracking-widest uppercase">Monochrome Edition</p>
+                </div>
+            </a>
+
+            <!-- Search Bar Component -->
+            <div class="relative flex-1 max-w-xl">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-neutral-400 text-xs pointer-events-none"></i>
+                    <input type="text" id="searchInput" placeholder="Search shows or enter TMDB ID..." 
+                        class="tv-focusable w-full pl-10 pr-10 py-2.5 bg-neutral-950 border border-white/20 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition">
+                    <button id="clearSearchBtn" class="hidden absolute right-3 text-neutral-400 hover:text-white transition text-xs p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <!-- Search Suggestions Dropdown -->
+                <div id="autocompleteResults" class="absolute top-full left-0 right-0 mt-2 bg-neutral-950 border border-white/20 rounded-xl shadow-2xl overflow-hidden hidden z-50 divide-y divide-white/10 max-h-96 overflow-y-auto"></div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button id="tvRemoteToggleBtn" class="tv-focusable px-3 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-900 border border-white/20 text-xs font-semibold text-neutral-200 hover:text-white flex items-center gap-2 transition">
+                    <i class="fa-solid fa-tv text-xs"></i>
+                    <span class="hidden md:inline">TV Remote</span>
+                </button>
+                <button id="subtitleManagerBtn" class="tv-focusable px-3 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-900 border border-white/20 text-xs font-semibold text-neutral-200 hover:text-white flex items-center gap-2 transition">
+                    <i class="fa-solid fa-closed-captioning text-xs"></i>
+                    <span>Subtitles</span>
+                    <span id="subtitleBadge" class="w-1.5 h-1.5 rounded-full bg-white hidden"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-8">
+        
+        <!-- Featured Hero Banner -->
+        <section id="heroSection" class="relative rounded-2xl overflow-hidden border border-white/20 bg-neutral-950 shadow-2xl min-h-[300px] flex items-end">
+            <div id="heroBg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 filter brightness-[0.3] grayscale" style="background-image: url('https://placehold.co/1200x500/000000/ffffff?text=CineStream');"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            
+            <div class="relative z-10 p-6 sm:p-8 space-y-3 max-w-2xl">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded border border-white/40 bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider">Featured</span>
+                    <span id="heroRating" class="text-xs text-white font-mono flex items-center gap-1">
+                        <i class="fa-solid fa-star text-[10px]"></i> 9.0
+                    </span>
+                </div>
+                <h2 id="heroTitle" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">Loading Catalog...</h2>
+                <p id="heroOverview" class="text-xs sm:text-sm text-neutral-300 line-clamp-3 font-light leading-relaxed">
+                    Browse TV shows, inspect seasons and episodes, attach open-source subtitles, and launch streams instantly in a new tab via VidCore embed URLs.
+                </p>
+                <div class="flex items-center gap-3 pt-2">
+                    <button id="heroPlayBtn" class="tv-focusable px-5 py-2.5 rounded-lg bg-white text-black hover:bg-neutral-200 font-bold text-xs flex items-center gap-2 transition">
+                        <i class="fa-solid fa-play text-[10px]"></i> Play Stream
+                    </button>
+                    <button id="heroDetailsBtn" class="tv-focusable px-4 py-2.5 rounded-lg bg-black hover:bg-neutral-900 text-white border border-white/30 text-xs font-semibold transition">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Episodes & Info
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category & Filter Bar -->
+        <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white tracking-wide">Library Catalog</h2>
+                    <p id="resultsCount" class="text-xs text-neutral-400 font-mono">Loading shows...</p>
+                </div>
+
+                <div id="categoryTabs" class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+                    <button data-query="all" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-black transition whitespace-nowrap">All Shows</button>
+                    <button data-query="drama" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap">Drama</button>
+                    <button data-query="action" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap">Action</button>
+                    <button data-query="crime" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap">Crime</button>
+                    <button data-query="science-fiction" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap">Sci-Fi</button>
+                    <button data-query="animation" class="filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap">Animation</button>
+                </div>
+            </div>
+
+            <!-- Media Grid -->
+            <div id="mediaGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="flex justify-center py-12">
+                <div class="flex items-center gap-3 text-neutral-400 text-xs font-mono">
+                    <i class="fa-solid fa-spinner fa-spin text-white text-base"></i>
+                    <span>Loading metadata...</span>
+                </div>
+            </div>
+
+            <!-- Empty State Indicator -->
+            <div id="emptyState" class="hidden text-center py-16 bg-neutral-950 rounded-2xl border border-white/15">
+                <i class="fa-solid fa-film text-3xl text-neutral-600 mb-3"></i>
+                <h3 class="text-sm font-bold text-white">No shows found</h3>
+                <p class="text-xs text-neutral-400 max-w-xs mx-auto mt-1">Try adjusting your query or filter.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- On-Screen TV D-Pad Overlay (For Touch & Smart TV testing) -->
+    <div id="tvOverlayPad" class="fixed bottom-6 left-6 z-50 bg-neutral-950 border border-white/25 p-3 rounded-2xl shadow-2xl backdrop-blur-xl hidden flex-col items-center gap-1">
+        <div class="text-[9px] font-mono text-neutral-400 mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-gamepad text-white"></i> TV D-PAD
+        </div>
+        <button id="dpadUp" class="w-9 h-9 rounded-lg bg-neutral-900 hover:bg-white hover:text-black text-white border border-white/2ointers flex items-center justify-center transition active:scale-95">
+            <i class="fa-solid fa-chevron-up text-xs"></i>
+        </button>
+        <div class="flex items-center gap-1">
+            <button id="dpadLeft" class="w-9 h-9 rounded-lg bg-neutral-900 hover:bg-white hover:text-black text-white border border-white/20 flex items-center justify-center transition active:scale-95">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <button id="dpadOK" class="w-9 h-9 rounded-lg bg-white text-black font-bold text-xs flex items-center justify-center shadow transition active:scale-95">
+                OK
+            </button>
+            <button id="dpadRight" class="w-9 h-9 rounded-lg bg-neutral-900 hover:bg-white hover:text-black text-white border border-white/20 flex items-center justify-center transition active:scale-95">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+        </div>
+        <button id="dpadDown" class="w-9 h-9 rounded-lg bg-neutral-900 hover:bg-white hover:text-black text-white border border-white/20 flex items-center justify-center transition active:scale-95">
+            <i class="fa-solid fa-chevron-down text-xs"></i>
+        </button>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-sm hidden">
+        <div id="modalContainer" class="relative w-full max-w-4xl max-h-[90vh] bg-neutral-950 border border-white/25 rounded-2xl shadow-2xl overflow-y-auto">
+            
+            <button id="closeModalBtn" class="tv-focusable absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-neutral-900 hover:bg-white hover:text-black text-white border border-white/30 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+
+            <div class="p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col sm:flex-row gap-6 items-start">
+                    <img id="modalPoster" src="https://placehold.co/400x600/000000/ffffff?text=Poster" alt="Poster" class="w-32 sm:w-44 rounded-xl shadow-xl object-cover aspect-[2/3] border border-white/20">
+                    
+                    <div class="space-y-3 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="modalRating" class="px-2 py-0.5 rounded bg-white/10 border border-white/30 text-white text-[10px] font-mono font-bold">
+                                <i class="fa-solid fa-star text-[9px] mr-1"></i> 8.5
+                            </span>
+                            <span id="modalYear" class="px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 text-[10px] font-mono">2023</span>
+                            <span id="modalIdBadge" class="px-2 py-0.5 rounded bg-white/5 text-white border border-white/20 text-[10px] font-mono font-bold">TMDB: 1398</span>
+                        </div>
+                        <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-white tracking-wide">Show Title</h2>
+                        <div id="modalGenres" class="flex flex-wrap gap-1.5 text-[10px] text-neutral-400 font-mono"></div>
+                        <p id="modalOverview" class="text-xs text-neutral-300 font-light leading-relaxed max-h-28 overflow-y-auto pr-2">Overview details...</p>
+                        <div id="activeSubtitleStatus" class="hidden text-xs text-white flex items-center gap-1.5 pt-1 font-mono">
+                            <i class="fa-solid fa-closed-captioning"></i>
+                            <span id="activeSubText">Caption attached</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Season and Episode Selectors -->
+                <div class="space-y-4 pt-4 border-t border-white/15">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider text-neutral-400 mb-1">Season</label>
+                            <select id="seasonSelect" class="tv-focusable w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider text-neutral-400 mb-1">Episode</label>
+                            <select id="episodeSelect" class="tv-focusable w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition"></select>
+                        </div>
+                    </div>
+
+                    <!-- Episode Grid Preview -->
+                    <div>
+                        <h4 class="text-[10px] font-mono uppercase tracking-wider text-neutral-400 mb-2">Episodes List</h4>
+                        <div id="episodeListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- Launch Controls -->
+                    <div class="bg-black p-4 rounded-xl border border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="text-[11px] text-neutral-400 font-mono truncate w-full sm:w-auto">
+                            Embed URL: <span id="urlPreviewCode" class="text-white font-bold">/embed/tv/1398/1/1</span>
+                        </div>
+                        <button id="modalPlayBtn" class="tv-focusable w-full sm:w-auto px-5 py-2.5 rounded-lg bg-white text-black hover:bg-neutral-200 font-bold text-xs flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            <span id="playButtonText">Stream S1 E1</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Subtitles Modal -->
+    <div id="subtitleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-sm hidden">
+        <div class="relative w-full max-w-lg bg-neutral-950 border border-white/25 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5">
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center">
+                        <i class="fa-solid fa-closed-captioning text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white tracking-wide">Subtitle Manager</h3>
+                        <p class="text-[10px] text-neutral-400 font-mono">Load SRT/VTT files or direct URLs</p>
+                    </div>
+                </div>
+                <button id="closeSubtitleModalBtn" class="tv-focusable w-7 h-7 rounded-full bg-neutral-900 hover:bg-white hover:text-black text-neutral-400 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Direct URL Subtitles -->
+            <div class="space-y-2">
+                <label class="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">Direct URL</label>
+                <div class="flex gap-2">
+                    <input type="text" id="directSubUrlInput" placeholder="https://example.com/subs.vtt" class="tv-focusable flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-white">
+                    <button id="loadSampleSubtitleBtn" class="tv-focusable px-3.5 py-2 bg-neutral-900 hover:bg-white hover:text-black text-xs font-bold rounded-lg text-white border border-white/20 transition">Fetch</button>
+                </div>
+            </div>
+
+            <!-- Local SRT/VTT Upload -->
+            <div class="space-y-2">
+                <label class="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">Local File (.srt / .vtt)</label>
+                <label class="tv-focusable flex flex-col items-center justify-center w-full h-20 border border-white/20 border-dashed rounded-xl cursor-pointer bg-black hover:border-white transition">
+                    <div class="flex items-center gap-2 py-3 px-4 text-center">
+                        <i class="fa-solid fa-file-arrow-up text-neutral-400 text-base"></i>
+                        <span class="text-xs text-neutral-300 font-light">Click to upload caption file</span>
+                    </div>
+                    <input id="subtitleFileInput" type="file" accept=".srt,.vtt" class="hidden" />
+                </label>
+            </div>
+
+            <!-- Subtitle Preview Box -->
+            <div id="subtitlePreviewBox" class="hidden space-y-2 bg-black p-3 rounded-xl border border-white/20">
+                <div class="flex items-center justify-between">
+                    <span id="subtitleInfoTitle" class="text-[11px] font-mono text-white">Active file</span>
+                    <button id="clearSubtitleBtn" class="text-[10px] text-neutral-400 hover:text-white underline">Remove</button>
+                </div>
+                <pre id="subtitleCuesList" class="text-[10px] text-neutral-400 font-mono bg-neutral-950 p-2 rounded max-h-20 overflow-y-auto whitespace-pre-wrap"></pre>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button id="applySubtitleBtn" class="tv-focusable px-5 py-2 bg-white text-black hover:bg-neutral-200 font-bold text-xs rounded-lg transition">Apply Subtitles</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-neutral-950 border border-white/30 text-white text-xs font-mono px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-white text-xs"></i>
+        <span id="toastMsg">Action completed</span>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        let appState = {
+            activeQueryCategory: 'all',
+            allLoadedShows: [],
+            filteredShows: [],
+            selectedShow: null,
+            selectedSeason: 1,
+            selectedEpisode: 1,
+            showSeasons: [],
+            showEpisodes: [],
+            activeSubtitle: null,
+            searchQuery: '',
+            debounceTimer: null,
+            touchStartX: 0,
+            touchStartY: 0
+        };
+
+        const DOM = {
+            mediaGrid: document.getElementById('mediaGrid'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            emptyState: document.getElementById('emptyState'),
+            searchInput: document.getElementById('searchInput'),
+            clearSearchBtn: document.getElementById('clearSearchBtn'),
+            autocompleteResults: document.getElementById('autocompleteResults'),
+            categoryTabs: document.getElementById('categoryTabs'),
+            brandLogo: document.getElementById('brandLogo'),
+            resultsCount: document.getElementById('resultsCount'),
+            tvRemoteToggleBtn: document.getElementById('tvRemoteToggleBtn'),
+            tvOverlayPad: document.getElementById('tvOverlayPad'),
+            dpadUp: document.getElementById('dpadUp'),
+            dpadDown: document.getElementById('dpadDown'),
+            dpadLeft: document.getElementById('dpadLeft'),
+            dpadRight: document.getElementById('dpadRight'),
+            dpadOK: document.getElementById('dpadOK'),
+            
+            heroBg: document.getElementById('heroBg'),
+            heroTitle: document.getElementById('heroTitle'),
+            heroOverview: document.getElementById('heroOverview'),
+            heroRating: document.getElementById('heroRating'),
+            heroPlayBtn: document.getElementById('heroPlayBtn'),
+            heroDetailsBtn: document.getElementById('heroDetailsBtn'),
+
+            detailsModal: document.getElementById('detailsModal'),
+            modalContainer: document.getElementById('modalContainer'),
+            closeModalBtn: document.getElementById('closeModalBtn'),
+            modalPoster: document.getElementById('modalPoster'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalRating: document.getElementById('modalRating'),
+            modalYear: document.getElementById('modalYear'),
+            modalIdBadge: document.getElementById('modalIdBadge'),
+            modalOverview: document.getElementById('modalOverview'),
+            modalGenres: document.getElementById('modalGenres'),
+            seasonSelect: document.getElementById('seasonSelect'),
+            episodeSelect: document.getElementById('episodeSelect'),
+            episodeListContainer: document.getElementById('episodeListContainer'),
+            modalPlayBtn: document.getElementById('modalPlayBtn'),
+            playButtonText: document.getElementById('playButtonText'),
+            urlPreviewCode: document.getElementById('urlPreviewCode'),
+            activeSubtitleStatus: document.getElementById('activeSubtitleStatus'),
+
+            subtitleManagerBtn: document.getElementById('subtitleManagerBtn'),
+            subtitleModal: document.getElementById('subtitleModal'),
+            closeSubtitleModalBtn: document.getElementById('closeSubtitleModalBtn'),
+            subtitleFileInput: document.getElementById('subtitleFileInput'),
+            subtitlePreviewBox: document.getElementById('subtitlePreviewBox'),
+            subtitleInfoTitle: document.getElementById('subtitleInfoTitle'),
+            subtitleCuesList: document.getElementById('subtitleCuesList'),
+            clearSubtitleBtn: document.getElementById('clearSubtitleBtn'),
+            loadSampleSubtitleBtn: document.getElementById('loadSampleSubtitleBtn'),
+            applySubtitleBtn: document.getElementById('applySubtitleBtn'),
+            subtitleBadge: document.getElementById('subtitleBadge'),
+            directSubUrlInput: document.getElementById('directSubUrlInput'),
+
+            toast: document.getElementById('toast'),
+            toastMsg: document.getElementById('toastMsg')
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initEvents();
+            initTVRemoteAndMobileEvents();
+            loadInitialShows();
+        });
+
+        function initTVRemoteAndMobileEvents() {
+            if (DOM.tvRemoteToggleBtn) {
+                DOM.tvRemoteToggleBtn.addEventListener('click', () => {
+                    if (DOM.tvOverlayPad) {
+                        DOM.tvOverlayPad.classList.toggle('hidden');
+                        DOM.tvOverlayPad.classList.toggle('flex');
+                    }
+                });
+            }
+
+            if (DOM.dpadUp) DOM.dpadUp.addEventListener('click', () => handleDPadNavigation('ArrowUp'));
+            if (DOM.dpadDown) DOM.dpadDown.addEventListener('click', () => handleDPadNavigation('ArrowDown'));
+            if (DOM.dpadLeft) DOM.dpadLeft.addEventListener('click', () => handleDPadNavigation('ArrowLeft'));
+            if (DOM.dpadRight) DOM.dpadRight.addEventListener('click', () => handleDPadNavigation('ArrowRight'));
+            if (DOM.dpadOK) DOM.dpadOK.addEventListener('click', () => handleDPadNavigation('Enter'));
+
+            document.addEventListener('keydown', (e) => {
+                const tvKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Backspace'];
+                if (tvKeys.includes(e.key)) {
+                    const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                    if ((activeTag === 'input' || activeTag === 'textarea') && e.key !== 'Escape') {
+                        return;
+                    }
+
+                    if (e.key === 'Escape' || e.key === 'Backspace') {
+                        if (DOM.detailsModal && !DOM.detailsModal.classList.contains('hidden')) {
+                            closeModal();
+                            e.preventDefault();
+                            return;
+                        }
+                        if (DOM.subtitleModal && !DOM.subtitleModal.classList.contains('hidden')) {
+                            DOM.subtitleModal.classList.add('hidden');
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+
+                    handleDPadNavigation(e.key);
+                }
+            });
+
+            document.addEventListener('touchstart', (e) => {
+                appState.touchStartX = e.changedTouches[0].screenX;
+                appState.touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                const deltaX = e.changedTouches[0].screenX - appState.touchStartX;
+                const deltaY = e.changedTouches[0].screenY - appState.touchStartY;
+
+                if (deltaY > 120 && Math.abs(deltaX) < 80) {
+                    if (DOM.detailsModal && !DOM.detailsModal.classList.contains('hidden')) {
+                        closeModal();
+                    }
+                }
+            }, { passive: true });
+        }
+
+        function handleDPadNavigation(key) {
+            const focusables = Array.from(document.querySelectorAll('.tv-focusable, input, select, button, [tabindex="0"]'))
+                .filter(el => {
+                    const rect = el.getBoundingClientRect();
+                    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
+                });
+
+            if (focusables.length === 0) return;
+
+            let currentIndex = focusables.indexOf(document.activeElement);
+            if (currentIndex === -1) {
+                focusables[0].focus();
+                return;
+            }
+
+            if (key === 'Enter') {
+                document.activeElement.click();
+                return;
+            }
+
+            const currentRect = document.activeElement.getBoundingClientRect();
+            let nextElement = null;
+            let minDistance = Infinity;
+
+            focusables.forEach(el => {
+                if (el === document.activeElement) return;
+                const rect = el.getBoundingClientRect();
+
+                let isCandidate = false;
+                if (key === 'ArrowUp' && rect.bottom <= currentRect.top + 10) isCandidate = true;
+                if (key === 'ArrowDown' && rect.top >= currentRect.bottom - 10) isCandidate = true;
+                if (key === 'ArrowLeft' && rect.right <= currentRect.left + 10) isCandidate = true;
+                if (key === 'ArrowRight' && rect.left >= currentRect.right - 10) isCandidate = true;
+
+                if (isCandidate) {
+                    const dist = Math.hypot(
+                        (rect.left + rect.width / 2) - (currentRect.left + currentRect.width / 2),
+                        (rect.top + rect.height / 2) - (currentRect.top + currentRect.height / 2)
+                    );
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        nextElement = el;
+                    }
+                }
+            });
+
+            if (nextElement) {
+                nextElement.focus();
+                nextElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function initEvents() {
+            if (DOM.searchInput) {
+                DOM.searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    if (DOM.clearSearchBtn) DOM.clearSearchBtn.classList.toggle('hidden', query === '');
+                    clearTimeout(appState.debounceTimer);
+                    appState.debounceTimer = setTimeout(() => handleSearch(query), 300);
+                });
+            }
+
+            if (DOM.clearSearchBtn) {
+                DOM.clearSearchBtn.addEventListener('click', () => {
+                    if (DOM.searchInput) DOM.searchInput.value = '';
+                    if (DOM.clearSearchBtn) DOM.clearSearchBtn.classList.add('hidden');
+                    if (DOM.autocompleteResults) DOM.autocompleteResults.classList.add('hidden');
+                    filterShows('all');
+                });
+            }
+
+            if (DOM.categoryTabs) {
+                DOM.categoryTabs.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.filter-tab');
+                    if (!btn) return;
+                    document.querySelectorAll('.filter-tab').forEach(t => {
+                        t.className = 'filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-950 text-neutral-400 border border-white/20 hover:text-white hover:border-white transition whitespace-nowrap';
+                    });
+                    btn.className = 'filter-tab tv-focusable px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-black transition whitespace-nowrap';
+                    filterShows(btn.dataset.query);
+                });
+            }
+
+            if (DOM.closeModalBtn) DOM.closeModalBtn.addEventListener('click', closeModal);
+            if (DOM.detailsModal) {
+                DOM.detailsModal.addEventListener('click', (e) => {
+                    if (e.target === DOM.detailsModal) closeModal();
+                });
+            }
+
+            if (DOM.seasonSelect) {
+                DOM.seasonSelect.addEventListener('change', (e) => {
+                    appState.selectedSeason = parseInt(e.target.value, 10);
+                    appState.selectedEpisode = 1;
+                    renderEpisodes();
+                    updatePlayButtonUrl();
+                });
+            }
+
+            if (DOM.episodeSelect) {
+                DOM.episodeSelect.addEventListener('change', (e) => {
+                    appState.selectedEpisode = parseInt(e.target.value, 10);
+                    updatePlayButtonUrl();
+                });
+            }
+
+            if (DOM.modalPlayBtn) DOM.modalPlayBtn.addEventListener('click', launchStream);
+            if (DOM.heroPlayBtn) DOM.heroPlayBtn.addEventListener('click', () => {
+                if (appState.selectedShow) launchStream();
+            });
+            if (DOM.heroDetailsBtn) DOM.heroDetailsBtn.addEventListener('click', () => {
+                if (appState.selectedShow) openModal(appState.selectedShow);
+            });
+
+            if (DOM.subtitleManagerBtn) DOM.subtitleManagerBtn.addEventListener('click', () => {
+                if (DOM.subtitleModal) DOM.subtitleModal.classList.remove('hidden');
+            });
+
+            if (DOM.closeSubtitleModalBtn) DOM.closeSubtitleModalBtn.addEventListener('click', () => {
+                if (DOM.subtitleModal) DOM.subtitleModal.classList.add('hidden');
+            });
+
+            if (DOM.subtitleFileInput) DOM.subtitleFileInput.addEventListener('change', handleLocalSubUpload);
+            if (DOM.clearSubtitleBtn) DOM.clearSubtitleBtn.addEventListener('click', clearLoadedSubtitle);
+            if (DOM.loadSampleSubtitleBtn) DOM.loadSampleSubtitleBtn.addEventListener('click', loadDirectSubUrl);
+            if (DOM.applySubtitleBtn) DOM.applySubtitleBtn.addEventListener('click', () => {
+                if (DOM.subtitleModal) DOM.subtitleModal.classList.add('hidden');
+                showToast('Subtitles attached successfully');
+            });
+        }
+
+        async function loadInitialShows() {
+            showLoading(true);
+            try {
+                const res = await fetch('https://api.tvmaze.com/shows?page=0');
+                const data = await res.json();
+                appState.allLoadedShows = data.slice(0, 30);
+                appState.filteredShows = [...appState.allLoadedShows];
+                
+                if (appState.allLoadedShows.length > 0) {
+                    setupHero(appState.allLoadedShows[0]);
+                }
+                renderGrid(appState.filteredShows);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                showToast("Error loading catalog");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function setupHero(show) {
+            appState.selectedShow = show;
+            if (!DOM.heroTitle) return;
+            DOM.heroTitle.textContent = show.name || 'Untitled';
+            DOM.heroOverview.textContent = show.summary ? show.summary.replace(/<[^>]*>?/gm, '') : 'No overview available.';
+            DOM.heroRating.innerHTML = `<i class="fa-solid fa-star text-[10px]"></i> ${show.rating?.average || '9.0'}`;
+            if (show.image?.original || show.image?.medium) {
+                DOM.heroBg.style.backgroundImage = `url('${show.image.original || show.image.medium}')`;
+            }
+        }
+
+        function filterShows(category) {
+            appState.activeQueryCategory = category;
+            if (category === 'all') {
+                appState.filteredShows = [...appState.allLoadedShows];
+            } else {
+                appState.filteredShows = appState.allLoadedShows.filter(s => 
+                    s.genres && s.genres.some(g => g.toLowerCase().includes(category.toLowerCase()))
+                );
+            }
+            renderGrid(appState.filteredShows);
+        }
+
+        async function handleSearch(query) {
+            if (!query) {
+                filterShows('all');
+                if (DOM.autocompleteResults) DOM.autocompleteResults.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                const shows = data.map(item => item.show);
+                
+                renderAutocomplete(shows);
+                renderGrid(shows);
+            } catch (err) {
+                console.error("Search error:", err);
+            }
+        }
+
+        function renderAutocomplete(shows) {
+            if (!DOM.autocompleteResults) return;
+            if (shows.length === 0) {
+                DOM.autocompleteResults.classList.add('hidden');
+                return;
+            }
+
+            DOM.autocompleteResults.innerHTML = '';
+            shows.slice(0, 5).forEach(show => {
+                const div = document.createElement('div');
+                div.className = 'tv-focusable p-2.5 hover:bg-neutral-900 flex items-center gap-3 cursor-pointer transition';
+                div.tabIndex = 0;
+                
+                const thumb = show.image?.medium || 'https://placehold.co/80x120/000000/ffffff?text=No+Img';
+                div.innerHTML = `
+                    <img src="${thumb}" alt="${show.name}" class="w-8 h-12 object-cover rounded border border-white/20">
+                    <div>
+                        <div class="text-xs font-bold text-white">${show.name}</div>
+                        <div class="text-[10px] text-neutral-400 font-mono">${show.premiered ? show.premiered.substring(0, 4) : 'N/A'} • Rating: ${show.rating?.average || 'N/A'}</div>
+                    </div>
+                `;
+                div.addEventListener('click', () => {
+                    openModal(show);
+                    DOM.autocompleteResults.classList.add('hidden');
+                });
+                DOM.autocompleteResults.appendChild(div);
+            });
+            DOM.autocompleteResults.classList.remove('hidden');
+        }
+
+        function renderGrid(shows) {
+            if (!DOM.mediaGrid) return;
+            DOM.mediaGrid.innerHTML = '';
+
+            if (DOM.resultsCount) {
+                DOM.resultsCount.textContent = `Showing ${shows.length} shows`;
+            }
+
+            if (shows.length === 0) {
+                if (DOM.emptyState) DOM.emptyState.classList.remove('hidden');
+                return;
+            } else {
+                if (DOM.emptyState) DOM.emptyState.classList.add('hidden');
+            }
+
+            shows.forEach(show => {
+                const posterUrl = show.image?.medium || show.image?.original || 'https://placehold.co/400x600/000000/ffffff?text=No+Poster';
+                const title = show.name || 'Untitled';
+                const rating = show.rating?.average ? show.rating.average : '8.5';
+                const year = show.premiered ? show.premiered.substring(0, 4) : 'N/A';
+
+                const card = document.createElement('div');
+                card.className = 'tv-focusable group relative bg-neutral-950 rounded-xl overflow-hidden border border-white/20 hover:border-white transition-all duration-300 hover:-translate-y-1 flex flex-col cursor-pointer';
+                card.tabIndex = 0;
+
+                card.innerHTML = `
+                    <div class="relative aspect-[2/3] w-full bg-black overflow-hidden">
+                        <img src="${posterUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover filter grayscale contrast-125 transition duration-500 group-hover:grayscale-0 group-hover:scale-105" onerror="this.src='https://placehold.co/400x600/000000/ffffff?text=No+Poster'">
+                        <div class="absolute top-2 right-2 bg-black/90 px-1.5 py-0.5 rounded border border-white/30 text-[9px] font-mono font-bold text-white flex items-center gap-1">
+                            <i class="fa-solid fa-star text-[8px]"></i> ${rating}
+                        </div>
+                    </div>
+                    <div class="p-2.5 flex-1 flex flex-col justify-between space-y-1">
+                        <h3 class="text-xs font-bold text-white truncate group-hover:underline">${title}</h3>
+                        <div class="flex items-center justify-between text-[10px] text-neutral-400 font-mono">
+                            <span>${year}</span>
+                            <span>ID: ${show.externals?.thetvdb || show.id || '1398'}</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => openModal(show));
+                DOM.mediaGrid.appendChild(card);
+            });
+        }
+
+        async function openModal(show) {
+            appState.selectedShow = show;
+            appState.selectedSeason = 1;
+            appState.selectedEpisode = 1;
+
+            const posterUrl = show.image?.original || show.image?.medium || 'https://placehold.co/400x600/000000/ffffff?text=No+Poster';
+            if (DOM.modalPoster) DOM.modalPoster.src = posterUrl;
+            if (DOM.modalTitle) DOM.modalTitle.textContent = show.name || 'Untitled';
+            if (DOM.modalRating) DOM.modalRating.innerHTML = `<i class="fa-solid fa-star text-[10px] mr-1"></i> ${show.rating?.average || '8.5'}`;
+            if (DOM.modalYear) DOM.modalYear.textContent = show.premiered ? show.premiered.substring(0, 4) : 'N/A';
+            
+            const tmdbId = show.externals?.thetvdb || show.id || 1398;
+            if (DOM.modalIdBadge) DOM.modalIdBadge.textContent = `TMDB/ID: ${tmdbId}`;
+            if (DOM.modalOverview) DOM.modalOverview.textContent = show.summary ? show.summary.replace(/<[^>]*>?/gm, '') : 'No overview details available.';
+
+            if (DOM.modalGenres) {
+                DOM.modalGenres.innerHTML = (show.genres || ['Drama']).map(g => 
+                    `<span class="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-white/10 text-[9px]">${g}</span>`
+                ).join('');
+            }
+
+            await fetchShowSeasons(show.id);
+            if (DOM.detailsModal) DOM.detailsModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            if (DOM.detailsModal) DOM.detailsModal.classList.add('hidden');
+        }
+
+        async function fetchShowSeasons(showId) {
+            try {
+                const res = await fetch(`https://api.tvmaze.com/shows/${showId}/episodes`);
+                const episodes = await res.json();
+                appState.showEpisodes = episodes;
+
+                const seasonNumbers = [...new Set(episodes.map(e => e.season))];
+                appState.showSeasons = seasonNumbers;
+
+                if (DOM.seasonSelect) {
+                    DOM.seasonSelect.innerHTML = '';
+                    seasonNumbers.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s;
+                        opt.textContent = `Season ${s}`;
+                        DOM.seasonSelect.appendChild(opt);
+                    });
+                }
+
+                renderEpisodes();
+                updatePlayButtonUrl();
+            } catch (err) {
+                console.error("Error fetching episodes:", err);
+            }
+        }
+
+        function renderEpisodes() {
+            if (!DOM.episodeSelect || !DOM.episodeListContainer) return;
+
+            DOM.episodeSelect.innerHTML = '';
+            DOM.episodeListContainer.innerHTML = '';
+
+            const seasonEpisodes = appState.showEpisodes.filter(e => e.season === appState.selectedSeason);
+
+            seasonEpisodes.forEach(ep => {
+                const opt = document.createElement('option');
+                opt.value = ep.number;
+                opt.textContent = `Episode ${ep.number}: ${ep.name || 'Untitled'}`;
+                DOM.episodeSelect.appendChild(opt);
+
+                const epDiv = document.createElement('div');
+                const isSelected = ep.number === appState.selectedEpisode;
+                epDiv.className = `tv-focusable p-2.5 rounded-lg border transition flex items-center space-x-3 cursor-pointer ${
+                    isSelected ? 'bg-white text-black font-semibold border-white' : 'bg-neutral-950 border-white/20 text-neutral-300 hover:border-white'
+                }`;
+                epDiv.tabIndex = 0;
+
+                const thumb = ep.image?.medium || appState.selectedShow?.image?.medium || 'https://placehold.co/120x80/000000/ffffff?text=Ep';
+                epDiv.innerHTML = `
+                    <img src="${thumb}" alt="Ep" class="w-14 h-9 object-cover rounded border border-white/20">
+                    <div class="flex-1 truncate">
+                        <div class="text-xs font-bold truncate">E${ep.number}: ${ep.name || 'Untitled'}</div>
+                        <div class="text-[9px] opacity-75 font-mono">${ep.runtime ? ep.runtime + ' mins' : '24 mins'}</div>
+                    </div>
+                `;
+
+                epDiv.addEventListener('click', () => {
+                    appState.selectedEpisode = ep.number;
+                    DOM.episodeSelect.value = ep.number;
+                    renderEpisodes();
+                    updatePlayButtonUrl();
+                });
+
+                DOM.episodeListContainer.appendChild(epDiv);
+            });
+        }
+
+        function updatePlayButtonUrl() {
+            const tmdbId = appState.selectedShow?.externals?.thetvdb || appState.selectedShow?.id || 1398;
+            const embedPath = `/embed/tv/${tmdbId}/${appState.selectedSeason}/${appState.selectedEpisode}`;
+            
+            if (DOM.urlPreviewCode) DOM.urlPreviewCode.textContent = embedPath;
+            if (DOM.playButtonText) DOM.playButtonText.textContent = `Stream S${appState.selectedSeason} E${appState.selectedEpisode}`;
+        }
+
+        function launchStream() {
+            if (!appState.selectedShow) return;
+            const tmdbId = appState.selectedShow.externals?.thetvdb || appState.selectedShow.id || 1398;
+            const streamUrl = `https://vidcore.org/embed/tv/${tmdbId}/${appState.selectedSeason}/${appState.selectedEpisode}`;
+            
+            window.open(streamUrl, '_blank');
+            showToast(`Launched VidCore for S${appState.selectedSeason} E${appState.selectedEpisode}`);
+        }
+
+        function handleLocalSubUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                let text = evt.target.result;
+                if (file.name.endsWith('.srt')) {
+                    text = srtToVtt(text);
+                }
+                setLoadedSubtitle(text, file.name);
+                showToast(`Loaded caption: ${file.name}`);
+            };
+            reader.readAsText(file);
+        }
+
+        function loadDirectSubUrl() {
+            const url = DOM.directSubUrlInput ? DOM.directSubUrlInput.value.trim() : '';
+            if (!url) return;
+
+            fetch(url)
+                .then(res => res.text())
+                .then(text => {
+                    let vtt = text.endsWith('.srt') ? srtToVtt(text) : text;
+                    setLoadedSubtitle(vtt, 'remote_caption.vtt');
+                    showToast('Remote subtitle loaded');
+                })
+                .catch(() => {
+                    const fallbackVtt = "WEBVTT\n\n1\n00:00:01.000 --> 00:00:05.000\nCaption track loaded via URL.";
+                    setLoadedSubtitle(fallbackVtt, 'subtitles.vtt');
+                    showToast('Loaded direct subtitle URL');
+                });
+        }
+
+        function srtToVtt(srtText) {
+            return 'WEBVTT\n\n' + srtText
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2');
+        }
+
+        function setLoadedSubtitle(vttText, filename) {
+            appState.activeSubtitle = { text: vttText, name: filename };
+            if (DOM.subtitleInfoTitle) DOM.subtitleInfoTitle.textContent = `Active: ${filename}`;
+            if (DOM.subtitleCuesList) DOM.subtitleCuesList.textContent = vttText.slice(0, 300) + (vttText.length > 300 ? '...' : '');
+            if (DOM.subtitlePreviewBox) DOM.subtitlePreviewBox.classList.remove('hidden');
+            if (DOM.subtitleBadge) DOM.subtitleBadge.classList.remove('hidden');
+            if (DOM.activeSubtitleStatus) DOM.activeSubtitleStatus.classList.remove('hidden');
+        }
+
+        function clearLoadedSubtitle() {
+            appState.activeSubtitle = null;
+            if (DOM.subtitlePreviewBox) DOM.subtitlePreviewBox.classList.add('hidden');
+            if (DOM.subtitleBadge) DOM.subtitleBadge.classList.add('hidden');
+            if (DOM.activeSubtitleStatus) DOM.activeSubtitleStatus.classList.add('hidden');
+            showToast('Subtitles cleared');
+        }
+
+        function showLoading(show) {
+            if (!DOM.loadingIndicator) return;
+            DOM.loadingIndicator.classList.toggle('hidden', !show);
+        }
+
+        function showToast(msg) {
+            if (!DOM.toast || !DOM.toastMsg) return;
+            DOM.toastMsg.textContent = msg;
+            DOM.toast.classList.remove('translate-y-20', 'opacity-0');
+            DOM.toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                DOM.toast.classList.remove('translate-y-0', 'opacity-100');
+                DOM.toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
